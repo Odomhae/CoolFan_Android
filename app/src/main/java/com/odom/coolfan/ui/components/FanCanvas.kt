@@ -63,7 +63,7 @@ fun FanCanvas(
         initialValue = -90f,
         targetValue = 90f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4000, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "swing_raw"
