@@ -1,12 +1,5 @@
 package com.odom.coolfan.ui.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -32,6 +25,9 @@ import com.odom.coolfan.ui.components.fan.ModernFanHead
 import com.odom.coolfan.ui.components.fan.VintageFanBody
 import com.odom.coolfan.ui.components.fan.VintageFanHead
 import com.odom.coolfan.util.rotationDurationMs
+import kotlin.math.abs
+
+private const val SWING_FULL_MS = 4000f  // 4초에 360° Y회전 1바퀴
 
 @Composable
 fun FanCanvas(
@@ -39,51 +35,62 @@ fun FanCanvas(
     themeColors: ThemeColors,
     modifier: Modifier = Modifier
 ) {
-    // Frame-by-frame rotation: responds to speed changes instantly
+    // ── 블레이드 Z축 회전 (속도 즉각 반응) ──────────────────────────────
     var rotationAngle by remember { mutableFloatStateOf(0f) }
     val currentSpeed by rememberUpdatedState(fanState.speed)
 
     LaunchedEffect(Unit) {
         var lastNanos = withFrameNanos { it }
         while (true) {
-            val frameNanos = withFrameNanos { it }
-            val deltaMs = ((frameNanos - lastNanos) / 1_000_000L).coerceAtMost(50L)
-            lastNanos = frameNanos
+            val nanos = withFrameNanos { it }
+            val dt = ((nanos - lastNanos) / 1_000_000L).coerceAtMost(50L)
+            lastNanos = nanos
             val spd = currentSpeed
             if (spd != FanSpeed.OFF) {
-                val degreesPerMs = 360f / spd.rotationDurationMs()
-                rotationAngle = (rotationAngle + degreesPerMs * deltaMs) % 360f
+                rotationAngle = (rotationAngle + 360f / spd.rotationDurationMs() * dt) % 360f
             }
         }
     }
 
-    // Swing: head-only Y-axis rotation (-90° ↔ +90° = total 180°)
-    val infiniteTransition = rememberInfiniteTransition(label = "swing")
-    val swingRaw by infiniteTransition.animateFloat(
-        initialValue = -90f,
-        targetValue = 90f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "swing_raw"
-    )
-    val swingAngle by animateFloatAsState(
-        targetValue = if (fanState.swinging) swingRaw else 0f,
-        animationSpec = tween(durationMillis = 500),
-        label = "swing_smooth"
-    )
+    // ── 헤드 Y축 전체 회전 (swing) ───────────────────────────────────────
+    var swingAngle by remember { mutableFloatStateOf(0f) }
+    val currentSwinging by rememberUpdatedState(fanState.swinging)
+
+    LaunchedEffect(Unit) {
+        val dpm = 360f / SWING_FULL_MS   // degrees per millisecond
+        var lastNanos = withFrameNanos { it }
+        while (true) {
+            val nanos = withFrameNanos { it }
+            val dt = ((nanos - lastNanos) / 1_000_000L).coerceAtMost(50L)
+            lastNanos = nanos
+            val step = dpm * dt
+
+            if (currentSwinging) {
+                // 시계 방향으로 연속 360° 회전
+                swingAngle = (swingAngle + step) % 360f
+            } else if (swingAngle != 0f) {
+                // 가장 짧은 경로로 0°(정면)에 복귀 (2배속)
+                val dist = if (swingAngle <= 180f) -swingAngle else 360f - swingAngle
+                val move = step * 2f
+                if (abs(dist) <= move) {
+                    swingAngle = 0f
+                } else {
+                    swingAngle = ((swingAngle + if (dist < 0) -move else move) + 360f) % 360f
+                }
+            }
+        }
+    }
 
     Box(modifier = modifier) {
-        // Static body: pole + base (never rotates)
+        // 폴대 + 받침 (정적, 절대 회전 안 함)
         when (fanState.fanStyle) {
-            FanStyle.VINTAGE  -> VintageFanBody(Modifier.fillMaxSize(), themeColors)
-            FanStyle.MODERN   -> ModernFanBody(Modifier.fillMaxSize(), themeColors)
+            FanStyle.VINTAGE   -> VintageFanBody(Modifier.fillMaxSize(), themeColors)
+            FanStyle.MODERN    -> ModernFanBody(Modifier.fillMaxSize(), themeColors)
             FanStyle.BLADELESS -> BladelessFanBody(Modifier.fillMaxSize(), themeColors)
-            FanStyle.CUTE     -> CuteFanBody(Modifier.fillMaxSize(), themeColors)
+            FanStyle.CUTE      -> CuteFanBody(Modifier.fillMaxSize(), themeColors)
         }
 
-        // Fan head: rotates on Y axis for realistic swing
+        // 팬 헤드: Y축 360° 회전
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -93,10 +100,10 @@ fun FanCanvas(
                 }
         ) {
             when (fanState.fanStyle) {
-                FanStyle.VINTAGE  -> VintageFanHead(Modifier.fillMaxSize(), rotationAngle, themeColors)
-                FanStyle.MODERN   -> ModernFanHead(Modifier.fillMaxSize(), rotationAngle, themeColors)
+                FanStyle.VINTAGE   -> VintageFanHead(Modifier.fillMaxSize(), rotationAngle, themeColors)
+                FanStyle.MODERN    -> ModernFanHead(Modifier.fillMaxSize(), rotationAngle, themeColors)
                 FanStyle.BLADELESS -> BladelessFanHead(Modifier.fillMaxSize(), rotationAngle, themeColors)
-                FanStyle.CUTE     -> CuteFanHead(Modifier.fillMaxSize(), rotationAngle, themeColors)
+                FanStyle.CUTE      -> CuteFanHead(Modifier.fillMaxSize(), rotationAngle, themeColors)
             }
         }
     }
