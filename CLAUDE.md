@@ -4,21 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Run Commands
 
+Gradle requires JDK 11+. The system default may be Java 8, so set `JAVA_HOME` explicitly:
+
 ```bash
 # Debug build
-./gradlew assembleDebug
+JAVA_HOME="C:/Program Files/Java/jdk-24" PATH="C:/Program Files/Java/jdk-24/bin:$PATH" ./gradlew assembleDebug
 
 # Install on connected device
-./gradlew installDebug
+JAVA_HOME="C:/Program Files/Java/jdk-24" PATH="C:/Program Files/Java/jdk-24/bin:$PATH" ./gradlew installDebug
 
 # Unit tests
-./gradlew test
+JAVA_HOME="C:/Program Files/Java/jdk-24" PATH="C:/Program Files/Java/jdk-24/bin:$PATH" ./gradlew test
 
 # Instrumented tests (requires connected device/emulator)
-./gradlew connectedAndroidTest
+JAVA_HOME="C:/Program Files/Java/jdk-24" PATH="C:/Program Files/Java/jdk-24/bin:$PATH" ./gradlew connectedAndroidTest
 
 # Single unit test class
-./gradlew test --tests "com.odom.coolfan.ExampleUnitTest"
+JAVA_HOME="C:/Program Files/Java/jdk-24" PATH="C:/Program Files/Java/jdk-24/bin:$PATH" ./gradlew test --tests "com.odom.coolfan.ExampleUnitTest"
 ```
 
 - Min SDK: 26 (Android 8.0), Target SDK: 36
@@ -30,46 +32,50 @@ Single-screen app with **State Hoisting**. All mutable state lives in `FanAppScr
 
 ```
 FanAppScreen          ← holds FanState, animates ThemeColors
-├── FanCanvas         ← frame-loop animation (LaunchedEffect + withFrameNanos)
+├── FanCanvas         ← single frame-loop (LaunchedEffect + withFrameNanos)
 │   ├── *FanBody      ← static: pole + base (never rotates)
-│   └── *FanHead      ← rotates on Y-axis (swing) wrapping blade Z-rotation
+│   └── *FanHead      ← swing Y-rotation wrapping blade Z-rotation
 ├── ControlPanel      ← Speed buttons + Swing toggle
 └── StyleSelector     ← 3-tab selector for Fan/Button/Theme customization
 ```
 
 ### Key Design Decisions
 
-**Frame-based animation** — `FanCanvas` uses `LaunchedEffect(Unit)` with `withFrameNanos` instead of `infiniteTransition`, so blade speed reacts immediately to speed changes without restarting the animation.
+**Single frame loop** — `FanCanvas` uses one `LaunchedEffect(Unit)` with `withFrameNanos` that drives both blade rotation and swing in the same tick. `rememberUpdatedState` is used for speed and swinging so changes take effect immediately without restarting the coroutine.
 
-**Body/Head split** — Each fan style has two composables: `*FanBody` (pole + base, always static) and `*FanHead` (grille + blades, subject to Y-axis swing rotation via `graphicsLayer { rotationY = swingAngle }`).
+**Body/Head split** — Each fan style has two composables: `*FanBody` (pole + base, always static) and `*FanHead` (grille + blades, subject to Y-axis swing rotation via `graphicsLayer { rotationY = swingAngle }`). Inside each head, blades get an additional `rotationY` tilt derived from `sin(rotationAngle)` to create a propeller-depth illusion.
 
-**Swing behavior** — ON: continuous 360° Y rotation (one revolution per 4 s). OFF: returns to 0° via shortest path at 2× speed.
+**Swing behavior** — ON: ±45° sinusoidal oscillation over 4 s, phase resets to 0 on each toggle-on. OFF: returns to 0° at a fixed rate (`RETURN_DEG_PER_MS`).
 
-**Theme color animation** — `FanAppScreen` calls `ThemeColors.animate()` (a private extension in `FanAppScreen.kt`) which animates each of the 5 color fields individually with `animateColorAsState`. The animated `ThemeColors` object is passed to all children, so color transitions ripple everywhere without recreating composables.
+**Theme color animation** — `FanAppScreen` calls `ThemeColors.animate()` (a private extension in `FanAppScreen.kt`) which animates each of the 5 color fields individually with `animateColorAsState`. The animated `ThemeColors` is passed to all children so transitions ripple everywhere without recreating composables.
+
+**Canvas sizing** — All drawing coordinates inside fan composables are relative to `r = minOf(size.width, size.height) * 0.42f`. Never use raw pixel literals; always derive dimensions from `r` so the UI scales correctly across screen densities.
 
 ### Data Model (`model/FanModels.kt`)
 
 ```kotlin
-enum class FanStyle   { VINTAGE, MODERN, BLADELESS, CUTE }
+enum class FanStyle    { VINTAGE, MODERN, BLADELESS, CUTE }
 enum class ButtonStyle { ROUND_DIAL, NEON, MINIMAL, PHYSICAL }
-enum class ColorTheme  { DARK_NEON, PASTEL, METAL, WOOD }
-enum class FanSpeed(val rpm: Float) { OFF, LOW(1.2s/rev), MEDIUM(0.6s), HIGH(0.3s) }
+enum class ColorTheme  { DARK_NEON, PASTEL, METAL, WOOD, COOL_BLUE, SKY }
+enum class FanSpeed    { OFF, LOW, MEDIUM, HIGH }  // durations in util/AnimationUtils.kt
 
-data class FanState(speed, swinging, fanStyle, buttonStyle, colorTheme)
+data class FanState(speed, swinging, fanStyle, buttonStyle, colorTheme, selectedStyleTab)
 data class ThemeColors(background, frame, blade, accent, text)
 ```
 
-`ColorTheme.toThemeColors()` maps each theme to its `ThemeColors`. `FanSpeed.rotationDurationMs()` lives in `util/AnimationUtils.kt`.
+`ColorTheme.toThemeColors()` maps each theme to its `ThemeColors`. `FanSpeed.rotationDurationMs()` in `util/AnimationUtils.kt` returns ms-per-revolution (OFF→0, LOW→1200, MEDIUM→600, HIGH→300). `selectedStyleTab` in `FanState` holds the active tab index for `StyleSelector` (hoisted so it survives recomposition).
 
 ### Fan Style Files
 
-Each style lives under `ui/components/fan/`:
-- `VintageFan.kt` — Body + Head composables
-- `ModernFan.kt`, `BladelessFan.kt`, `CuteFan.kt` — same pattern
+Each style lives under `ui/components/fan/` as a `*FanBody` + `*FanHead` composable pair:
+- `VintageFan.kt` — 3-blade, radial-gradient, wire grill
+- `ModernFan.kt` — 5-blade, linear-gradient, ring grill
+- `BladelessFan.kt` — Dyson-style ring with flow markers; no blade tilt effect
+- `CuteFan.kt` — 4-blade with face hub and dot-decorated ring
 
 ### CustomButton Styles (`ui/components/CustomButton.kt`)
 
-`ROUND_DIAL`, `NEON`, `MINIMAL`, `PHYSICAL` are rendered as separate private composables. Press scale animation (`animateFloatAsState`, 100 ms) is shared across all styles.
+`ROUND_DIAL`, `NEON`, `MINIMAL`, `PHYSICAL` are rendered as separate private composables inside the file. Press scale animation (`animateFloatAsState`, 100 ms) is shared across all styles.
 
 ## Package
 
