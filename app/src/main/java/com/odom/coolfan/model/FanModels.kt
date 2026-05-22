@@ -6,19 +6,15 @@ enum class FanStyle { VINTAGE, MODERN, BLADELESS, CUTE }
 enum class ButtonStyle { ROUND_DIAL, NEON, MINIMAL, PHYSICAL }
 enum class ColorTheme { DARK_NEON, PASTEL, METAL, WOOD, COOL_BLUE, SKY }
 
-enum class FanSpeed(val rpm: Float) {
-    OFF(0f),
-    LOW(1f),
-    MEDIUM(2f),
-    HIGH(3f)
-}
+enum class FanSpeed { OFF, LOW, MEDIUM, HIGH }
 
 data class FanState(
     val speed: FanSpeed = FanSpeed.OFF,
     val swinging: Boolean = false,
     val fanStyle: FanStyle = FanStyle.VINTAGE,
     val buttonStyle: ButtonStyle = ButtonStyle.ROUND_DIAL,
-    val colorTheme: ColorTheme = ColorTheme.SKY
+    val colorTheme: ColorTheme = ColorTheme.SKY,
+    val selectedStyleTab: Int = 0
 )
 
 data class ThemeColors(

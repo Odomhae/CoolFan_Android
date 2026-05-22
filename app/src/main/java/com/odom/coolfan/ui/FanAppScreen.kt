@@ -89,10 +89,12 @@ fun FanAppScreen() {
             fanStyle = fanState.fanStyle,
             buttonStyle = fanState.buttonStyle,
             colorTheme = fanState.colorTheme,
+            selectedTab = fanState.selectedStyleTab,
             themeColors = animColors,
             onFanStyleChange = { fanState = fanState.copy(fanStyle = it) },
             onButtonStyleChange = { fanState = fanState.copy(buttonStyle = it) },
-            onColorThemeChange = { fanState = fanState.copy(colorTheme = it) }
+            onColorThemeChange = { fanState = fanState.copy(colorTheme = it) },
+            onTabChange = { fanState = fanState.copy(selectedStyleTab = it) }
         )
 
         Spacer(modifier = Modifier.height(24.dp))

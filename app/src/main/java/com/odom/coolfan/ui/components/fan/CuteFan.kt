@@ -67,8 +67,8 @@ fun CuteFanBody(
     Canvas(modifier = modifier) {
         val cx = size.width / 2f; val cy = size.height / 2f
         val r = minOf(size.width, size.height) * 0.40f
-        drawCutePole(cx, cy + r * 0.9f, themeColors.frame)
-        drawCuteBase(cx, cy + r * 1.35f, themeColors.frame, themeColors.accent)
+        drawCutePole(cx, cy + r * 0.9f, r, themeColors.frame)
+        drawCuteBase(cx, cy + r * 1.35f, r, themeColors.frame, themeColors.accent)
     }
 }
 
@@ -113,11 +113,15 @@ private fun DrawScope.drawCuteFace(cx: Float, cy: Float, hubR: Float, accentColo
     drawPath(smile, color = textColor, style = Stroke(width = hubR * 0.12f))
 }
 
-private fun DrawScope.drawCutePole(cx: Float, poleTop: Float, color: Color) {
-    drawRoundRect(color = color, topLeft = Offset(cx - 7f, poleTop), size = Size(14f, 50f), cornerRadius = CornerRadius(7f))
+private fun DrawScope.drawCutePole(cx: Float, poleTop: Float, r: Float, color: Color) {
+    val pw = r * 0.06f
+    val ph = r * 0.45f
+    drawRoundRect(color = color, topLeft = Offset(cx - pw / 2f, poleTop), size = Size(pw, ph), cornerRadius = CornerRadius(pw / 2f))
 }
 
-private fun DrawScope.drawCuteBase(cx: Float, baseY: Float, color: Color, accentColor: Color) {
-    drawRoundRect(color = color, topLeft = Offset(cx - 55f, baseY - 12f), size = Size(110f, 24f), cornerRadius = CornerRadius(12f))
-    drawCircle(color = accentColor, radius = 6f, center = Offset(cx, baseY))
+private fun DrawScope.drawCuteBase(cx: Float, baseY: Float, r: Float, color: Color, accentColor: Color) {
+    val hw = r * 0.46f
+    val h = r * 0.10f
+    drawRoundRect(color = color, topLeft = Offset(cx - hw, baseY - h / 2f), size = Size(hw * 2f, h), cornerRadius = CornerRadius(h / 2f))
+    drawCircle(color = accentColor, radius = r * 0.05f, center = Offset(cx, baseY))
 }

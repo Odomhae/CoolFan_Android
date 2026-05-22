@@ -39,47 +39,38 @@ fun FanCanvas(
     themeColors: ThemeColors,
     modifier: Modifier = Modifier
 ) {
-    // ── 블레이드 Z축 회전 (속도 즉각 반응) ──────────────────────────────
     var rotationAngle by remember { mutableFloatStateOf(0f) }
+    var swingAngle by remember { mutableFloatStateOf(0f) }
+    var swingPhase by remember { mutableFloatStateOf(0f) }
+
     val currentSpeed by rememberUpdatedState(fanState.speed)
+    val currentSwinging by rememberUpdatedState(fanState.swinging)
 
     LaunchedEffect(Unit) {
         var lastNanos = withFrameNanos { it }
+        var lastSwinging = false
         while (true) {
             val nanos = withFrameNanos { it }
             val dt = ((nanos - lastNanos) / 1_000_000L).coerceAtMost(50L)
             lastNanos = nanos
+
             val spd = currentSpeed
             if (spd != FanSpeed.OFF) {
                 rotationAngle = (rotationAngle + 360f / spd.rotationDurationMs() * dt) % 360f
             }
-        }
-    }
 
-    // ── 헤드 Y축 좌우 진동 (swing) ──────────────────────────────────────
-    var swingAngle by remember { mutableFloatStateOf(0f) }
-    var swingPhase by remember { mutableFloatStateOf(0f) }
+            val swinging = currentSwinging
+            if (swinging && !lastSwinging) swingPhase = 0f
+            lastSwinging = swinging
 
-    LaunchedEffect(fanState.swinging) {
-        var lastNanos = withFrameNanos { it }
-        if (fanState.swinging) {
-            swingPhase = 0f
-            while (true) {
-                val nanos = withFrameNanos { it }
-                val dt = ((nanos - lastNanos) / 1_000_000L).coerceAtMost(50L)
-                lastNanos = nanos
+            if (swinging) {
                 swingPhase = (swingPhase + dt) % SWING_PERIOD_MS
                 swingAngle = SWING_AMPLITUDE *
                     sin(2.0 * Math.PI * swingPhase / SWING_PERIOD_MS).toFloat()
-            }
-        } else {
-            while (swingAngle != 0f) {
-                val nanos = withFrameNanos { it }
-                val dt = ((nanos - lastNanos) / 1_000_000L).coerceAtMost(50L)
-                lastNanos = nanos
+            } else if (swingAngle != 0f) {
                 val step = RETURN_DEG_PER_MS * dt
-                if (abs(swingAngle) <= step) { swingAngle = 0f; break }
-                swingAngle -= step * sign(swingAngle)
+                if (abs(swingAngle) <= step) swingAngle = 0f
+                else swingAngle -= step * sign(swingAngle)
             }
         }
     }

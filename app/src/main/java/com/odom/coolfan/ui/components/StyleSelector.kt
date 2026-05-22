@@ -18,10 +18,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,14 +38,14 @@ fun StyleSelector(
     fanStyle: FanStyle,
     buttonStyle: ButtonStyle,
     colorTheme: ColorTheme,
+    selectedTab: Int,
     themeColors: ThemeColors,
     onFanStyleChange: (FanStyle) -> Unit,
     onButtonStyleChange: (ButtonStyle) -> Unit,
     onColorThemeChange: (ColorTheme) -> Unit,
+    onTabChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -62,7 +58,7 @@ fun StyleSelector(
                         .weight(1f)
                         .clip(RoundedCornerShape(8.dp))
                         .background(if (isActive) themeColors.accent else themeColors.frame)
-                        .clickable { selectedTab = index }
+                        .clickable { onTabChange(index) }
                         .padding(vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {

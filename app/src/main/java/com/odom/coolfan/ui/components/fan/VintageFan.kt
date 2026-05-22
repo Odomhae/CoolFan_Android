@@ -65,7 +65,7 @@ fun VintageFanBody(
     Canvas(modifier = modifier) {
         val (cx, cy, r) = dims()
         drawVintagePole(cx, cy, r, themeColors.frame)
-        drawVintageBase(cx, cy + r * 1.35f, themeColors.frame)
+        drawVintageBase(cx, cy + r * 1.35f, r, themeColors.frame)
     }
 }
 
@@ -121,6 +121,8 @@ private fun DrawScope.drawVintagePole(cx: Float, cy: Float, r: Float, color: Col
     drawRect(color = color, topLeft = Offset(cx - pw / 2f, cy + r * 0.9f), size = Size(pw, r * 0.5f))
 }
 
-private fun DrawScope.drawVintageBase(cx: Float, baseY: Float, color: Color) {
-    drawRoundRect(color = color, topLeft = Offset(cx - 80f, baseY - 9f), size = Size(160f, 18f), cornerRadius = CornerRadius(9f))
+private fun DrawScope.drawVintageBase(cx: Float, baseY: Float, r: Float, color: Color) {
+    val hw = r * 0.63f
+    val h = r * 0.07f
+    drawRoundRect(color = color, topLeft = Offset(cx - hw, baseY - h / 2f), size = Size(hw * 2f, h), cornerRadius = CornerRadius(h / 2f))
 }

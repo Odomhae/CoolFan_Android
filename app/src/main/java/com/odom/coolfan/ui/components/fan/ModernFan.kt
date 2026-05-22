@@ -64,7 +64,7 @@ fun ModernFanBody(
         val cx = size.width / 2f; val cy = size.height / 2f
         val r = minOf(size.width, size.height) * 0.42f
         drawModernPole(cx, cy, r, themeColors.frame)
-        drawModernBase(cx, cy + r * 1.35f, themeColors.frame)
+        drawModernBase(cx, cy + r * 1.35f, r, themeColors.frame)
     }
 }
 
@@ -101,6 +101,8 @@ private fun DrawScope.drawModernPole(cx: Float, cy: Float, r: Float, color: Colo
     drawRect(color = color, topLeft = Offset(cx - pw / 2f, cy + r * 0.9f), size = Size(pw, r * 0.5f))
 }
 
-private fun DrawScope.drawModernBase(cx: Float, baseY: Float, color: Color) {
-    drawRoundRect(color = color, topLeft = Offset(cx - 70f, baseY - 8f), size = Size(140f, 16f), cornerRadius = CornerRadius(8f))
+private fun DrawScope.drawModernBase(cx: Float, baseY: Float, r: Float, color: Color) {
+    val hw = r * 0.56f
+    val h = r * 0.064f
+    drawRoundRect(color = color, topLeft = Offset(cx - hw, baseY - h / 2f), size = Size(hw * 2f, h), cornerRadius = CornerRadius(h / 2f))
 }

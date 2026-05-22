@@ -62,8 +62,8 @@ fun BladelessFanBody(
     Canvas(modifier = modifier) {
         val cx = size.width / 2f; val cy = size.height * 0.45f
         val outerR = minOf(size.width, size.height) * 0.40f
-        drawBladelessPillar(cx, cy + outerR, outerR * 0.55f, themeColors.frame)
-        drawBladelessBase(cx, cy + outerR + outerR * 0.55f + 10f, outerR * 0.18f, outerR * 0.55f, themeColors.frame)
+        drawBladelessPillar(cx, cy + outerR, outerR * 0.55f, outerR, themeColors.frame)
+        drawBladelessBase(cx, cy + outerR + outerR * 0.55f + outerR * 0.025f, outerR * 0.18f, outerR * 0.55f, themeColors.frame)
     }
 }
 
@@ -100,8 +100,9 @@ private fun DrawScope.drawFlowMarkers(
     }
 }
 
-private fun DrawScope.drawBladelessPillar(cx: Float, startY: Float, height: Float, color: Color) {
-    drawRect(color = color, topLeft = Offset(cx - 9f, startY), size = Size(18f, height))
+private fun DrawScope.drawBladelessPillar(cx: Float, startY: Float, height: Float, outerR: Float, color: Color) {
+    val pw = outerR * 0.075f
+    drawRect(color = color, topLeft = Offset(cx - pw / 2f, startY), size = Size(pw, height))
 }
 
 private fun DrawScope.drawBladelessBase(cx: Float, baseY: Float, height: Float, width: Float, color: Color) {
