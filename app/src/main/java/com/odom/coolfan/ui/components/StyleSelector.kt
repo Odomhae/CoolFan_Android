@@ -227,4 +227,6 @@ private fun ColorTheme.label() = when (this) {
     ColorTheme.PASTEL -> "Pastel"
     ColorTheme.METAL -> "Metal"
     ColorTheme.WOOD -> "Wood"
+    ColorTheme.COOL_BLUE -> "Cool"
+    ColorTheme.SKY -> "Sky"
 }

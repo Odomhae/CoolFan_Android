@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 enum class FanStyle { VINTAGE, MODERN, BLADELESS, CUTE }
 enum class ButtonStyle { ROUND_DIAL, NEON, MINIMAL, PHYSICAL }
-enum class ColorTheme { DARK_NEON, PASTEL, METAL, WOOD }
+enum class ColorTheme { DARK_NEON, PASTEL, METAL, WOOD, COOL_BLUE, SKY }
 
 enum class FanSpeed(val rpm: Float) {
     OFF(0f),
@@ -18,7 +18,7 @@ data class FanState(
     val swinging: Boolean = false,
     val fanStyle: FanStyle = FanStyle.VINTAGE,
     val buttonStyle: ButtonStyle = ButtonStyle.ROUND_DIAL,
-    val colorTheme: ColorTheme = ColorTheme.DARK_NEON
+    val colorTheme: ColorTheme = ColorTheme.SKY
 )
 
 data class ThemeColors(
@@ -57,5 +57,19 @@ fun ColorTheme.toThemeColors(): ThemeColors = when (this) {
         blade = Color(0xFFC8956C),
         accent = Color(0xFF8B5E3C),
         text = Color(0xFF4A2C0A)
+    )
+    ColorTheme.COOL_BLUE -> ThemeColors(
+        background = Color(0xFF071B35),
+        frame = Color(0xFF0D3B6E),
+        blade = Color(0xFF1565C0),
+        accent = Color(0xFF29B6F6),
+        text = Color(0xFFB3E5FC)
+    )
+    ColorTheme.SKY -> ThemeColors(
+        background = Color(0xFFEBF8FF),
+        frame = Color(0xFFBEE3F8),
+        blade = Color(0xFF63B3ED),
+        accent = Color(0xFF3182CE),
+        text = Color(0xFF1A365D)
     )
 }
